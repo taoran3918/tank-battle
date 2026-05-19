@@ -101,7 +101,7 @@ canvas.width = COLS * TILE;
 canvas.height = ROWS * TILE;
 
 // --- 音效引擎 ---
-const Audio = {
+const SFX = {
   ctx: null,
   init() {
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -404,11 +404,11 @@ class Bullet {
         this.alive = false;
         map[row][col] = TILE_EMPTY;
         spawnBrickParticles(col * TILE + TILE/2, row * TILE + TILE/2);
-        Audio.hit();
+        SFX.hit();
       } else if (tile === TILE_STEEL) {
         this.alive = false;
         spawnHitEffect(this.x, this.y);
-        Audio.hit();
+        SFX.hit();
       } else if (tile === TILE_BASE) {
         this.alive = false;
         map[row][col] = TILE_EMPTY;
@@ -535,7 +535,7 @@ function spawnExplosion(x, y) {
     particles.push(new Particle(x, y, '#ff4400', 25 + Math.random()*15));
   }
   shakeTime = 15;
-  Audio.explode();
+  SFX.explode();
 }
 
 function spawnBrickParticles(x, y) {
@@ -643,7 +643,7 @@ function updateAI(enemy) {
   // 射击
   if (Math.random() < 0.02 && player && player.alive) {
     const b = enemy.shoot();
-    if (b) { bullets.push(b); Audio.shoot(); }
+    if (b) { bullets.push(b); SFX.shoot(); }
   }
 }
 
@@ -712,7 +712,7 @@ function checkPowerUpPickup() {
 }
 
 function applyPowerUp(p) {
-  Audio.powerup();
+  SFX.powerup();
   if (p.type === 'star') {
     score += 300;
   } else if (p.type === 'clock') {
@@ -735,7 +735,7 @@ function applyPowerUp(p) {
 // --- 游戏流程 ---
 function gameOver() {
   gameState = 'gameover';
-  Audio.gameover();
+  SFX.gameover();
   const overlay = document.getElementById('overlay');
   overlay.innerHTML = `
     <div class="msg">
@@ -804,7 +804,7 @@ function loadLevel(lvl) {
 }
 
 function startGame() {
-  Audio.init();
+  SFX.init();
   score = 0;
   lives = 3;
   gameState = 'playing';
@@ -873,7 +873,7 @@ function update() {
     else if (keys['ArrowRight'] || keys['d']) player.move(DIR_RIGHT);
     if (keys[' '] || keys['j']) {
       const b = player.shoot();
-      if (b) { bullets.push(b); Audio.shoot(); }
+      if (b) { bullets.push(b); SFX.shoot(); }
     }
   }
 
@@ -985,8 +985,16 @@ function draw() {
 }
 
 function gameLoop() {
-  update();
-  draw();
+  try {
+    update();
+    draw();
+  } catch (e) {
+    console.error(e);
+    gameState = 'error';
+    document.getElementById('overlay').innerHTML =
+      '<div class="msg"><h1>出错了</h1><p style="color:#f44">' + e.message + '</p><button onclick="startGame()">重试</button></div>';
+    return;
+  }
   requestAnimationFrame(gameLoop);
 }
 
