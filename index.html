@@ -104,7 +104,11 @@ canvas.height = ROWS * TILE;
 const SFX = {
   ctx: null,
   init() {
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) {
+      this.ctx = null;
+    }
   },
   play(freq, duration, type = 'square', vol = 0.08) {
     if (!this.ctx) return;
@@ -182,7 +186,7 @@ const LEVELS = [
 ];
 
 // --- 游戏状态 ---
-let map = [];
+let map = Array.from({length: ROWS}, () => Array(COLS).fill(TILE_EMPTY));
 let player = null;
 let enemies = [];
 let bullets = [];
